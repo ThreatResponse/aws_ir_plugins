@@ -1,0 +1,6 @@
+boto3
+moto
+mock
+magicmock
+requests
+jinja2
