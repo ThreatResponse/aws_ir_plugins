@@ -1,4 +1,3 @@
-import aws_ir
 import datetime
 import fnmatch
 import os
@@ -83,7 +82,7 @@ class Plugin(object):
         )
         return response
 
-    def __locate_file(self, pattern, root=aws_ir.__path__[0]):
+    def __locate_file(self, pattern, root=aws_ir_plugins.__path__[0]):
         """Locate all files matching supplied filename pattern in and below
 
         supplied root directory.
