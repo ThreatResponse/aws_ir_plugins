@@ -22,12 +22,12 @@ class Plugin(object):
 
     def setup(self):
         """Method runs the plugin attaching policies to the user in question"""
-        if self.dry_run is not False:
+        self.template = self.__generate_inline_policy()
+        if self.dry_run is not True:
             username = self.__get_username_for_key()
             policy_document = self.__generate_inline_policy()
             self.__attach_inline_policy(username, policy_document)
             pass
-        pass
 
     def validate(self):
         """Checks the a policy is actually attached"""
@@ -65,6 +65,7 @@ class Plugin(object):
         template_name = self.__locate_file('deny-sts-before-time.json.j2')
         template_file = open(template_name)
         template_contents = template_file.read()
+        template_file.close()
         jinja_template = Template(template_contents)
         policy_document = jinja_template.render(
             before_date=self.__get_date()
@@ -82,11 +83,12 @@ class Plugin(object):
         )
         return response
 
-    def __locate_file(self, pattern, root=aws_ir_plugins.__path__[0]):
+    def __locate_file(self, pattern, root=os.path.dirname('revokests_key.py')):
         """Locate all files matching supplied filename pattern in and below
 
         supplied root directory.
         """
+
         for path, dirs, files in os.walk(os.path.abspath(root)):
             for filename in fnmatch.filter(files, pattern):
                 return os.path.join(path, filename)
