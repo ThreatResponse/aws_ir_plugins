@@ -9,11 +9,8 @@ from unittest.mock import patch
 
 class RevokeSTSTest(unittest.TestCase):
     @mock_iam
-    def setUp(self):
-        self.iam = boto3.client('iam', region_name='us-west-2')
-
-    @mock_iam
     def test_jinja_rendering(self):
+        self.iam = boto3.client('iam', region_name='us-west-2')
         self.user = self.iam.create_user(
             UserName='bobert'
         )
@@ -29,19 +26,25 @@ class RevokeSTSTest(unittest.TestCase):
             'access_key_id': self.access_key_id,
             'compromise_type': 'key'
         }
+        session = None
+        with patch.object(
+                revokests_key.Plugin, '_get_client', return_value=self.iam
+        ) as mock_client:
 
-        plugin = revokests_key.Plugin(
-            client=self.iam,
-            compromised_resource=self.compromised_resource,
-            dry_run=True
-        )
+            mock_client.return_value = self.iam
+            plugin = revokests_key.Plugin(
+                boto_session=session,
+                compromised_resource=self.compromised_resource,
+                dry_run=True
+            )
 
         assert json.loads(plugin.template)
 
     @mock_iam
     @patch('aws_ir_plugins.revokests_key.Plugin')
     def test_plugin(self, mock_revokests):
-        mock_revokests.__get_username_for_key.return_value = 'bobert'
+        self.iam = boto3.client('iam', region_name='us-west-2')
+        mock_revokests._get_username_for_key.return_value = 'bobert'
         mock_revokests.validate.return_value = 'True'
 
         self.user = self.iam.create_user(
@@ -60,11 +63,16 @@ class RevokeSTSTest(unittest.TestCase):
             'compromise_type': 'key'
         }
 
-        plugin = revokests_key.Plugin(
-            client=self.iam,
-            compromised_resource=self.compromised_resource,
-            dry_run=False
-        )
+        with patch.object(
+                revokests_key.Plugin, '_get_client', return_value=self.iam
+        ) as mock_client:
+
+            mock_client.return_value = self.iam
+            plugin = revokests_key.Plugin(
+                client=self.iam,
+                compromised_resource=self.compromised_resource,
+                dry_run=False
+            )
 
         res1 = plugin.setup()
 
