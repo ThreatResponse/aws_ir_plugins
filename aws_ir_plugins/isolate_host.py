@@ -1,17 +1,17 @@
 import logging
 
+
 logger = logging.getLogger(__name__)
 
 
 class Plugin(object):
     def __init__(
         self,
-        client,
+        boto_session,
         compromised_resource,
         dry_run=False
     ):
-
-        self.client = client
+        self.session = boto_session
         self.compromised_resource = compromised_resource
         self.compromise_type = compromised_resource['compromise_type']
         self.examiner_cidr_range = compromised_resource['examiner_cidr_range']
@@ -20,16 +20,17 @@ class Plugin(object):
         self.setup()
 
     def setup(self):
-        sg = self.__create_isolation_security_group()
+        self.client = self._get_client()
+        sg = self._create_isolation_security_group()
         if self.exists is not True:
-            acl = self.__create_network_acl()
-            self.__add_network_acl_entries(acl)
-            self.__add_security_group_to_instance(sg)
+            acl = self._create_network_acl()
+            self._add_network_acl_entries(acl)
+            self._add_security_group_to_instance(sg)
 
         """Conditions that can not be dry_run"""
         if self.dry_run is False:
-            self.__revoke_egress(sg)
-            self.__add_security_group_to_instance(sg)
+            self._revoke_egress(sg)
+            self._add_security_group_to_instance(sg)
 
     def validate(self):
         """Validate that the instance is in fact isolated"""
@@ -38,14 +39,19 @@ class Plugin(object):
         else:
             return False
 
-    def __create_isolation_security_group(self):
+    def _get_client(self):
+        client = self.session.client(
+            service_name='ec2'
+        )
+        return client
+
+    def _create_isolation_security_group(self):
         try:
             security_group_result = self.client.create_security_group(
                 DryRun=self.dry_run,
-                GroupName=self.__generate_security_group_name(),
+                GroupName=self._generate_security_group_name(),
                 Description="ThreatResponse Isolation Security Group",
                 VpcId=self.compromised_resource['vpc_id'],
-
             )
 
             self.exists = False
@@ -58,26 +64,30 @@ class Plugin(object):
             security_group_result = self.client.describe_security_groups(
                 DryRun=self.dry_run,
                 GroupNames=[
-                    self.__generate_security_group_name()
+                    self._generate_security_group_name()
                 ]
             )['SecurityGroups'][0]
         return security_group_result['GroupId']
 
-    def __revoke_egress(self, group_id):
-        result = self.client.revoke_security_group_egress(
-            DryRun=self.dry_run,
-            GroupId=group_id,
-            IpPermissions=[
-                {
-                    'IpProtocol': '-1',
-                    'FromPort': -1,
-                    'ToPort': -1,
-                },
-            ]
-        )
-        return result
+    def _revoke_egress(self, group_id):
+        try:
+            result = self.client.revoke_security_group_egress(
+                DryRun=self.dry_run,
+                GroupId=group_id,
+                IpPermissions=[
+                    {
+                        'IpProtocol': '-1',
+                        'FromPort': -1,
+                        'ToPort': -1,
+                    },
+                ]
+            )
+            return result
+        except Exception as e:
+            logger.info('There was an error {e} while '
+                        'revoking egress from {sg}.'.format(e=e, sg=group_id))
 
-    def __generate_security_group_name(self):
+    def _generate_security_group_name(self):
         sg_name = "isolation-sg-{case_number}-{instance}".format(
             case_number=self.compromised_resource['case_number'],
             instance=self.compromised_resource['instance_id']
@@ -85,7 +95,7 @@ class Plugin(object):
         self.sg_name = sg_name
         return sg_name
 
-    def __add_security_group_to_instance(self, group_id):
+    def _add_security_group_to_instance(self, group_id):
         try:
             self.client.modify_instance_attribute(
                 DryRun=self.dry_run,
@@ -98,7 +108,7 @@ class Plugin(object):
         except Exception:
             return False
 
-    def __create_network_acl(self):
+    def _create_network_acl(self):
         try:
             response = self.client.create_network_acl(
                 DryRun=self.dry_run,
@@ -106,15 +116,12 @@ class Plugin(object):
             )
             return response['NetworkAcl']['NetworkAclId']
         except Exception as e:
-            try:
-                if e.response['Error']['Message'] == """
-                Request would have succeeded, but DryRun flag is set.
-                """:
-                    return None
-            except Exception as e:
-                raise e
+            logger.info(
+                'There was an error {e} '
+                'while creating the nacl'.format(e=e)
+            )
 
-    def __add_network_acl_entries(self, acl_id):
+    def _add_network_acl_entries(self, acl_id):
         try:
             self.client.create_network_acl_entry(
                 DryRun=self.dry_run,
@@ -127,10 +134,7 @@ class Plugin(object):
             )
             return True
         except Exception as e:
-            try:
-                if e.response['Error']['Message'] == """
-                Request would have succeeded, but DryRun flag is set.
-                """:
-                    return None
-            except Exception as e:
-                raise e
+            logger.info(
+                'There was an error {e} '
+                'while adding the nacl'.format(e=e)
+            )
