@@ -63,9 +63,12 @@ class Plugin(object):
             self.exists = True
             security_group_result = self.client.describe_security_groups(
                 DryRun=self.dry_run,
-                GroupNames=[
-                    self._generate_security_group_name()
-                ]
+                Filters=[{
+                    'Name': 'group-name',
+                    'Values': [
+                        self._generate_security_group_name(),
+                    ]
+                }]
             )['SecurityGroups'][0]
         return security_group_result['GroupId']
 
