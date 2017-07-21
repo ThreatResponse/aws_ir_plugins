@@ -15,7 +15,7 @@ class install(_install):
         _install.run(self)
 
 setup(name="aws_ir_plugins",
-      version="0.0.1",
+      version="0.0.2",
       author="Andrew Krug, Alex McCormack, Joel Ferrier",
       author_email="andrewkrug@gmail.com,developer@amccormack.net,joel@ferrier.io",
       packages=["aws_ir_plugins"],
