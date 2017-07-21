@@ -30,7 +30,7 @@ class Plugin(object):
         if self.dry_run is not True:
             self.client = self._get_client()
             username = self._get_username_for_key()
-            policy_document = self.__generate_inline_policy()
+            policy_document = self._generate_inline_policy()
             self._attach_inline_policy(username, policy_document)
             pass
 
