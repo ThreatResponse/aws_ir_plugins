@@ -77,3 +77,6 @@ class Plugin(object):
             if snapshot is not None:
                 snapshot_id = snapshot.get('SnapshotId')
                 print(self._tag_snapshot(snapshot_id))
+
+    def validate(self):
+        return True
