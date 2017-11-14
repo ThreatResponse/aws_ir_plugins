@@ -1,10 +1,18 @@
 import base64
 import json
 import logging
+from datetime import datetime
 """Gathers ephemeral data that could be lost on instance termination"""
 
-
 logger = logging.getLogger(__name__)
+
+
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, datetime):
+            return o.isoformat()
+
+        return super(DateTimeEncoder, self).default(o)
 
 
 class Plugin(object):
@@ -72,7 +80,7 @@ class Plugin(object):
 
     def _log_aws_instance_metadata(self, data):
         if self.api is True:
-            self.evidence['metadata.json'] = json.dumps(data)
+            self.evidence['metadata.json'] = json.dumps(data, cls=DateTimeEncoder)
         else:
             logfile = ("/tmp/{case_number}-{instance_id}-metadata.log").format(
                 case_number=self.compromised_resource['case_number'],
@@ -89,7 +97,7 @@ class Plugin(object):
 
     def _log_aws_instance_console_output(self, data):
         if self.api is True:
-            self.evidence['console.json'] = json.dumps(data)
+            self.evidence['console.json'] = json.dumps(data, cls=DateTimeEncoder)
         else:
             logfile = ("/tmp/{case_number}-{instance_id}-console.log").format(
                 case_number=self.compromised_resource['case_number'],
