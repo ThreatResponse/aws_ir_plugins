@@ -119,7 +119,7 @@ class Plugin(object):
                 WakeUp=True
             )
             if self.api is True:
-                self.evidence['screenshot.jpg'] = response['ImageData']
+                self.evidence['screenshot.jpg'] = base64.b64decode(response['ImageData'])
             else:
                 logfile = ("/tmp/{case_number}-{instance_id}-screenshot.jpg")\
                     .format(
