@@ -17,3 +17,9 @@ import aws_ir_plugins
 from aws_ir_plugins import disableaccess_key.py
 
 ```
+
+## Virutal Env
+`virtualenv env -p python3`
+
+## Tests
+`python setup.py test`
