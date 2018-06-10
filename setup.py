@@ -3,8 +3,6 @@ import unittest
 
 from distutils.command.build import build
 from setuptools import setup
-from setuptools.command.install import install as _install
-
 
 VERSION = re.search(
     r"^__version__ = ['\"]([^'\"]*)['\"]",
@@ -12,18 +10,10 @@ VERSION = re.search(
     re.MULTILINE
 ).group(1)
 
-
 def test_suite():
     test_loader = unittest.TestLoader()
     test_suite = test_loader.discover('tests', pattern='test_*.py')
     return test_suite
-
-
-class install(_install):
-    def run(self):
-        self.run_command('build')
-        _install.run(self)
-
 
 setup(name="aws_ir_plugins",
       version=VERSION,
