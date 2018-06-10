@@ -1,23 +1,34 @@
+import re
+import unittest
+
 from distutils.command.build import build
 from setuptools import setup
 from setuptools.command.install import install as _install
 
-import unittest
+
+VERSION = re.search(
+    r"^__version__ = ['\"]([^'\"]*)['\"]",
+    open('aws_ir_plugins/_version.py', 'r').read(),
+    re.MULTILINE
+).group(1)
+
 
 def test_suite():
     test_loader = unittest.TestLoader()
     test_suite = test_loader.discover('tests', pattern='test_*.py')
     return test_suite
 
+
 class install(_install):
     def run(self):
         self.run_command('build')
         _install.run(self)
 
+
 setup(name="aws_ir_plugins",
-      version="0.0.2",
-      author="Andrew Krug, Alex McCormack, Joel Ferrier",
-      author_email="andrewkrug@gmail.com,developer@amccormack.net,joel@ferrier.io",
+      version=VERSION,
+      author="Andrew Krug, Alex McCormack, Joel Ferrier, Jeff Parr",
+      author_email="andrewkrug@gmail.com,developer@amccormack.net,joel@ferrier.io,jp@ephemeralsystems.com",
       packages=["aws_ir_plugins"],
       package_data={'aws_ir_plugins': ['templates/*.j2']},
       license="MIT",
@@ -28,7 +39,7 @@ setup(name="aws_ir_plugins",
       test_suite=('setup.test_suite'),
       install_requires=['boto3>=1.3.0',
                         'requests',
-                        'jinja2'
+                        'jinja2',
                         ],
       tests_require=['moto',
                      'mock',

@@ -1,12 +1,31 @@
 language: python
 python:
-  - "3.6"
+- '3.6'
 before_install:
-  - "pip install flake8"
-  - "flake8 plugins"
+- if [[ -z $TRAVIS_TAG ]]; then sed -i "s/['\"]\([^\"]*\)['\"]/\"\1b$TRAVIS_BUILD_NUMBER\"/g"
+  aws_ir_plugins/_version.py; fi
 install:
-  - "pip install -r requirements-dev.txt"
-  - "python setup.py build"
-  - "python setup.py install"
+- pip install -r requirements-dev.txt
+- pip install flake8
+- python -W ignore::UserWarning:distutils.dist setup.py build
 script:
-  - python -m unittest discover tests
+- flake8 plugins
+- python setup.py test
+deploy:
+  matrix:
+  - provider: pypi
+    distributions: sdist bdist_wheel
+    user: threatresponse
+    password:
+      secure: qYav6prhKwMUZX7ceFA0scfbDy/mobg1KQS3v507GqlYBhLX9y1LNy2j9tfDLPuEQFpirZ2wR2oIQOt6S1gnY8WGeoC242MlIIUCV+i0Rwi+zY7kEQxIeegkc37oqA0Xd3a+F9DlY0sVzS2PkScDj9CkQlAAUwfxvuZqIA6Eezaj325YTlmHOwc5WPsPW0CqrGpCz5Lu2B63Z+vvsH7/XVuO4K8qcTVaO+uosmY8tgVjwjNA/zsb8xvOsSfwgkphMVTPT94HjtgGLqWUqOkmcUh97dAEczf+0cRHNTJHd12kL2WlU1Zy5kP/GyqKpOwN57inOk408IFobGJKMCSdaKVBtsO+V4hs33IGuKHJdd0LwHyJqTwp7CTRwazxnK9InP7qrvMV1HhaupJrS5VtoOY4xw4MHzUpTM8kCaksZ3MSah/o7kIzTSPBR8Xh+ublPLaoTtTFXoH8d58GyLCU3JFvZdEXTi2ccdoKyQ6tI+J3Zi6Hig9xA/vQGij4aQNnPZiR7xOFKbUiunBhwcZ9EpwCSzw/ln/LmpAvQcsScIRaujzX2yJDWUI+91wR3EfYKGu3PrDIXu2ruICNyBY8wbJG7VOTxgzKVG4NunL/ylJWTs5f1lXh8bmomr7GOwNkjm0MjHV338UKukWlXrN+2M9ngBNK3+4TbWQbt6PqsiI=
+    on:
+      tags: true
+  - provider: pypi
+    server: https://test.pypi.org/legacy/
+    distributions: sdist bdist_wheel
+    user: threatresponse
+    password:
+      secure: mqnGxRQxsRKpMHT0Xr5/UWeiODTLWDhduWt4LnHieV/McVkMeKxhgrlQw/Sxbl4vIKyjK/9rfzK0o/5ON2yaSpGGjzYa1wi1tyg8BOb7/BgEpzO83yjTS/vFMdU0NKj7YCq9viyGyEC52HoPus0cj0GOqFztiw1lQK8Z+MFxQwIgyGMEznDJ3aBJtLmr+XuhmNpVEd16lEigID+Ra2fwjsBVyg0kyw2GFmaoJA8v/Om/f2P7ge9MYvcqcDZXCc7YF8KwQhWr13OyOjLaS0lsgdrEeJ+w+mU29mZa+2jqQGA7NGoicHLoTEfE8nK07TzXy+yx8Ztw52TDNoCP4pkX2RO8SutnllrKNmVrnKfwzVzrxNdHFgjQSM8CPuUMAqh3dnJgzQvL/lCMJ0bJ0JioRIAmf0XpJB9QoEDMzW8AQrDdQ3rdNUiGJILhIw+Rt14F/2HbubYKzepvxHVMJs5x6tN2wNj7a9+daqq5kmklRVeW/1mYi5dUxcUfHEmwD1ysikuvt1uj9xDVhFtq4DbglGLTC/aOtU3Il+CirZiAHzMdqnAi/QJor4uyT9xgeqJbH0TuAKnExzlnYHQvnXgbEG68KTVx0PW4WgzvcSbjYCPA6zjgMPfe0aU1C4aq56uH17SdOLjBlSvSPlz6QzXMf7lgykQM5yJB7RPrRpUAHHc=
+    skip_cleanup: true
+    on:
+      all_branches: true
