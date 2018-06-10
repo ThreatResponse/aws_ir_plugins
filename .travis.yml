@@ -12,7 +12,6 @@ script:
 - flake8 plugins
 - python setup.py test
 deploy:
-  matrix:
   - provider: pypi
     distributions: sdist bdist_wheel
     user: threatresponse
